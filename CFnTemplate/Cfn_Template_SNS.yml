@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  LambdaStackName:
+    Type: String
+  SnsTopicArn:
+    Type: String
+Resources:
+  Sns01:
+    Type: "AWS::SNS::Subscription"
+    Properties:
+      Endpoint: { "Fn::ImportValue": !Join [ "-", [ "Ref":"LambdaStackName","Lambda01"]] }
+      Protocol: lambda
+      TopicArn: !Ref SnsTopicArn
+
+

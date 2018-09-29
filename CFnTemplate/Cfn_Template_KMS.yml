@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  KmsKeyAlias:
+      Description: KMS Key Alias
+      Type: String
+  RoleName:
+      Description: Role Arn
+      Type: String
+Resources:
+  KmsKey:
+    Type: AWS::KMS::Key
+    Properties: 
+      Description : "for Lambda to Slack"
+      KeyPolicy:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: "kms:*"
+            Resource: "*"
+          -
+            Effect: "Allow"
+            Principal:
+              AWS: !Join [ "/", [ !Sub "arn:aws:iam::${AWS::AccountId}:role",!Ref RoleName]]
+            Action:
+              - "kms:Create*"
+              - "kms:Describe*"
+              - "kms:Enable*"
+              - "kms:List*"
+              - "kms:Put*"
+              - "kms:Update*"
+              - "kms:Revoke*"
+              - "kms:Disable*"
+              - "kms:Get*"
+              - "kms:Delete*"
+              - "kms:TagResource"
+              - "kms:UntagResource"
+              - "kms:ScheduleKeyDeletion"
+              - "kms:CancelKeyDeletion"
+            Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Ref KmsKeyAlias
+  KeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Join [ "/", [ "alias", !Ref KmsKeyAlias ] ]
+      TargetKeyId: !Ref KmsKey
+Outputs:
+  OutputKmsKey:
+    Value: !GetAtt KmsKey.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-KmsKey"
+

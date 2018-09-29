@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  KmsStackName:
+      Description: KMS Stack Name
+      Type: String
+      Default: Stack-KMS
+  FunctionName:
+      Description: Lambda Function Name
+      Type: String
+      Default: LambdaToSlack
+  Handler: 
+      Description: Lambda Handler Name
+      Type: String
+  S3BucketName:
+      Description: S3 bucket name with zip file
+      Type: String
+  kmsEncryptedHookUrl:
+      Description: Slack Webhook URL
+      Type: String
+  S3KeyName:
+      Description: Zip file name
+      Type: String
+  slackChannel:
+      Description: Slack Channel
+      Type: String
+  LambdaExecRole:
+      Description: Lambda Role
+      Type: String
+  SnsTopicName:
+      Description: Lambda Role
+      Type: String
+Resources:
+  Lambda01:
+    Type: "AWS::Lambda::Function"
+    Properties: 
+      Code:
+        S3Bucket: !Ref S3BucketName
+        S3Key: !Ref S3KeyName
+      Environment:
+        Variables:
+          slackChannel: !Ref slackChannel
+          kmsEncryptedHookUrl: !Ref kmsEncryptedHookUrl
+      FunctionName: !Ref FunctionName
+      Handler: !Ref Handler
+      KmsKeyArn: { "Fn::ImportValue": !Join [ "-", [ "Ref":"KmsStackName","KmsKey"]] }
+      Role: !Join [ "/", [ !Sub "arn:aws:iam::${AWS::AccountId}:role",!Ref LambdaExecRole]]
+      Runtime: python3.6
+  LambdaPermission:
+    Type : "AWS::Lambda::Permission"
+    Properties :
+        Action : lambda:InvokeFunction
+        FunctionName : !GetAtt Lambda01.Arn
+        Principal : sns.amazonaws.com
+        SourceArn : !Ref SnsTopicName
+Outputs:
+  OutputLambda01:
+    Value: !GetAtt Lambda01.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-Lambda01"
